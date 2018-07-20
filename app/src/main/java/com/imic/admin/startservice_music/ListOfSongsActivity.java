@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.Button;
@@ -26,7 +28,7 @@ import java.util.ArrayList;
 
 
 public class ListOfSongsActivity extends AppCompatActivity {
-
+    private static final String TAG = "ListOfSongsActivity";
     ListView listview;
     Button btnPlayStop;
     TextView txtSongName;
@@ -45,6 +47,14 @@ public class ListOfSongsActivity extends AppCompatActivity {
         listview = (ListView) findViewById(R.id.listView);
         listOfContents = new ArrayList<>();
 
+
+        // get data from intent
+        Intent intentStart = getIntent();
+        if(intentStart!=null){
+            if(intentStart.getStringExtra("name")!=null){
+                Log.d(TAG, "initViews: "+ intentStart.getStringExtra("name"));
+            }
+        }
         //If music is playing already on opening starting the app, player should be visible with Stop button
         if (playing) {
             txtSongName.setText(songName);
@@ -82,12 +92,16 @@ public class ListOfSongsActivity extends AppCompatActivity {
                 SongObject sdOb = listOfContents.get(position);
                 absolutePath = sdOb.getAbsolutePath();
 
-                //Play the selected song by starting the service
-                Intent start = new Intent(ListOfSongsActivity.this, MusicService.class);
-                startService(start);
-
                 //Get and set the name of song in the player
                 songName = listOfContents.get(position).getFileName();
+
+                //Play the selected song by starting the service
+                Intent start = new Intent(ListOfSongsActivity.this, MusicService.class);
+                start.putExtra("path",absolutePath);
+                start.putExtra("name",songName);
+                startService(start);
+
+
                 txtSongName.setText(songName);
                 btnPlayStop.setText("Stop");
             }
@@ -113,6 +127,8 @@ public class ListOfSongsActivity extends AppCompatActivity {
                     playing = true;
                     btnPlayStop.setText("Stop");
                     Intent i = new Intent(ListOfSongsActivity.this, MusicService.class);
+                    i.putExtra("path",absolutePath);
+                    i.putExtra("name",songName);
                     startService(i);
                 }
             }
@@ -133,6 +149,17 @@ public class ListOfSongsActivity extends AppCompatActivity {
                     fileName = file1.getName();
                     if ((fileName.endsWith(".mp3")) || (fileName.endsWith(".mp4"))) {
                         listOfContents.add(new SongObject(file1.getName(), file1.getAbsolutePath()));
+                        /*MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                        mmr.setDataSource(file1.getAbsolutePath());
+
+                        String albumName = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                        String artist = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                        String genre = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_GENRE);
+                        byte[] artBytes = mmr.getEmbeddedPicture();*/
+
+                        //Log.d(TAG, "albumName: " + albumName + "artist:  " + artist + "genre: " + genre);
+                        //Log.d(TAG, "initList: " + artist);
+                        //Log.d(TAG, "initList: " + genre);
                     }
 
                 }
